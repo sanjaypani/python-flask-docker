@@ -2,8 +2,29 @@ from flask import Flask, request, jsonify
 
 from flask_restful import Api, Resource
 
+from pymongo import MongoClient
+
+import logging
+
+logging.basicConfig(level=logging.INFO)
+
 app = Flask(__name__)
 api = Api(app)
+
+client = MongoClient("mongodb://db:27017")
+db = client.aNewDB
+UserNum = db["UserNum"]
+
+UserNum.insert({'num_of_users': 0})
+
+class Visit(Resource):
+    def get(self):
+        prev_num = UserNum.find({})[0]['num_of_users']
+        logging.info("Previous Number is " + str(prev_num))
+        new_num = prev_num + 1
+        logging.info("Current Number is " + str(prev_num))
+        UserNum.update({}, {"$set":{"num_of_users":new_num}})
+        return str("Hello User " + str(new_num))
 
 def checkPostedData(posted_data, function):
     if (function == 'add' or function == 'substract'  or function == 'multiply'):
@@ -133,6 +154,7 @@ api.add_resource(Add, "/add")
 api.add_resource(Substract, "/substract")
 api.add_resource(Multiply, "/multiply")
 api.add_resource(Divison, "/division")
+api.add_resource(Visit, "/hello")
 
 
 @app.route('/')
